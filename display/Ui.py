@@ -27,21 +27,29 @@ class Ui:
         self.in_pause = False
 
     def run(self):
-
-
-
         while self.running:
+            self.handle_events()
+            self.game.update_game()
+            self.draw()
+
+
+
+
+
+
+    def draw(self):
+        if self.in_menu:
+            self.draw_main_menu()
+        elif self.in_game:
+            self.draw_game()
+
+
+    def handle_events(self):
+        for event in pygame.event.get():
             if self.in_menu:
-                self.draw_main_menu()
-            elif self.in_game:
-                self.draw_game()
-
-            for event in pygame.event.get():
-                if self.in_menu:
-                    self.handle_main_menu_events(event)
-                if self.in_game:
-                    self.handle_game_in_progress_event(event)
-
+                self.handle_main_menu_events(event)
+            if self.in_game:
+                self.handle_game_event(event)
 
 
     def draw_main_menu(self):
@@ -73,7 +81,8 @@ class Ui:
         self.draw_board()
         pygame.display.flip()
 
-    def handle_game_in_progress_event(self, event):
+
+    def handle_game_event(self, event):
         if event.type == pygame.QUIT:
             self.running = False
             pygame.quit()
@@ -82,17 +91,20 @@ class Ui:
                 print("In menu")
                 self.in_game = False
                 self.in_menu = True
-            if event.key == pygame.K_LEFT:
-                self.game.selected_row -= 1 if self.game.selected_row > 0 else 0
-            if event.key == pygame.K_RIGHT:
-                self.game.selected_row += 1 if self.game.selected_row < 6 else 0
+            if event.key == pygame.K_LEFT or event.key == pygame.K_q:
+                self.game.left_arrow = True
+            if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+                self.game.right_arrow = True
+            if event.key == pygame.K_RETURN:
+                self.game.enter = True
+            if event.key == pygame.K_SPACE:
+                self.game.space = True
         if event.type == pygame.MOUSEMOTION:
-            self.mouse_set_selected_row(event)
+            self.game.mouse_motions = True
+            self.game.mouse_pos = event.pos
+        else:
+            self.game.mouse_motions = False
 
-    def mouse_set_selected_row(self,event):
-        pos_y = event.pos[0] - OFFSET_X
-        selected_row = pos_y // SQUARE_SIZE
-        self.game.selected_row = selected_row
 
     def draw_board(self):
 
@@ -120,7 +132,7 @@ class Ui:
 
                 pygame.draw.circle(self.screen, color, (center_x, center_y), RADIUS)
 
-        selected_row_center = self.game.selected_row * SQUARE_SIZE + SQUARE_SIZE/2
+        selected_row_center = self.game.selected_col * SQUARE_SIZE + SQUARE_SIZE / 2
 
         points =[(selected_row_center-(SQUARE_SIZE/4),OFFSET_Y - SQUARE_SIZE),
                  (selected_row_center+(SQUARE_SIZE/4),OFFSET_Y - SQUARE_SIZE),
